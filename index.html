@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escala de Plantão</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #e0e0e0;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #333;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .header h2 {
+            font-size: 20px; /* Tamanho da fonte do mês e ano */
+            color: #666;
+            margin: 5px 0;
+            text-transform: uppercase;
+        }
+
+        .calendar-controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-controls label {
+            font-size: 18px;
+            margin-right: 10px;
+            color: #333;
+            text-transform: uppercase;
+        }
+
+        .calendar-controls input[type="month"] {
+            padding: 10px;
+            font-size: 18px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            text-transform: uppercase;
+        }
+
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .calendar th, .calendar td {
+            border: 1px solid #ddd;
+            width: 14.28%;
+            height: 80px; /* Tamanho da célula do calendário */
+            vertical-align: top;
+            padding: 5px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .calendar th {
+            background-color: #007BFF;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+            font-size: 20px; /* Tamanho da fonte dos dias da semana */
+        }
+
+        .calendar td.weekend {
+            background-color: #b3e5fc;
+        }
+
+        .calendar td.holiday {
+            background-color: #c62828;
+            color: #fff;
+        }
+
+        .calendar td input {
+            width: calc(100% - 10px);
+            border: none;
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 0;
+            border-radius: 4px;
+            text-transform: uppercase;
+            text-align: center;
+            background-color: transparent;
+            color: #000;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none; /* Inicialmente escondido */
+        }
+
+        .calendar td input.visible {
+            display: block; /* Mostra apenas se for fim de semana ou feriado */
+        }
+
+        .calendar td .day-number {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px; /* Tamanho do número ajustado */
+            color: rgba(0, 0, 0, 0.2);
+            z-index: 0;
+            line-height: 80px;
+        }
+
+        .print-button {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .print-button button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .print-button button:hover {
+            background-color: #0056b3;
+        }
+
+        @media print {
+            .calendar-controls, .print-button {
+                display: none;
+            }
+            body {
+                margin: 0;
+                font-size: 12px;
+            }
+            .calendar th, .calendar td {
+                border: 1px solid #ddd !important;
+            }
+            .calendar td {
+                height: 60px;
+            }
+            .calendar td input {
+                height: 40px;
+                font-size: 12px;
+            }
+            .header h2 {
+                font-size: 14px;
+            }
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .calendar th, .calendar td {
+                font-size: 14px; /* Ajusta o tamanho da fonte para telas menores */
+                height: 60px;
+            }
+            .header h1 {
+                font-size: 28px;
+            }
+            .header h2 {
+                font-size: 18px;
+            }
+            .calendar-controls label, .calendar-controls input[type="month"] {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>ESCALA DE PLANTÃO</h1>
+        <h2 id="selectedMonthYear"></h2>
+    </div>
+
+    <div class="calendar-controls">
+        <label for="month">MÊS:</label>
+        <input type="month" id="month">
+    </div>
+
+    <table class="calendar">
+        <thead>
+            <tr>
+                <th>Domingo</th>
+                <th>Segunda</th>
+                <th>Terça</th>
+                <th>Quarta</th>
+                <th>Quinta</th>
+                <th>Sexta</th>
+                <th>Sábado</th>
+            </tr>
+        </thead>
+        <tbody id="calendar-body">
+            <!-- Dias do calendário serão gerados aqui -->
+        </tbody>
+    </table>
+
+    <div class="print-button">
+        <button onclick="window.print()">Imprimir Escala</button>
+    </div>
+</div>
+
+<script>
+    const monthInput = document.getElementById('month');
+    const calendarBody = document.getElementById('calendar-body');
+    const selectedMonthYear = document.getElementById('selectedMonthYear');
+
+    monthInput.addEventListener('input', generateCalendar);
+
+    const feriados = {
+        '01-01': 'Confraternização Universal',
+        '29-03': 'Sexta-feira Santa',
+        '30-03': 'Sábado de Aleluia',
+        '21-04': 'Tiradentes',
+        '01-05': 'Dia do Trabalho',
+        '30-05': 'Corpus Christi',
+        '24-06': 'São João',
+        '02-07': 'Independência da Bahia',
+        '02-08': 'Dia de Nossa Senhora dos Remédios',
+        '07-09': 'Independência do Brasil',
+        '12-10': 'Nossa Senhora Aparecida',
+        '02-11': 'Finados',
+        '15-11': 'Proclamação da República',
+        '20-11': 'Consciência Negra',
+        '25-12': 'Natal'
+    };
+
+    function generateCalendar() {
+        const [year, month] = monthInput.value.split('-');
+        const date = new Date(year, month - 1, 1);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const firstDay = date.getDay();
+
+        selectedMonthYear.textContent = `${date.toLocaleString('pt-BR', { month: 'long' })} de ${year}`;
+
+        let html = '';
+        let day = 1;
+
+        for (let i = 0; i < 6; i++) {
+            html += '<tr>';
+            for (let j = 0; j < 7; j++) {
+                if (i === 0 && j < firstDay || day > daysInMonth) {
+                    html += '<td></td>';
+                } else {
+                    const dateStr = `${String(day).padStart(2, '0')}-${String(month).padStart(2, '0')}`;
+                    const isWeekend = (j === 0 || j === 6);
+                    const isHoliday = feriados[dateStr] !== undefined;
+                    const cellClass = isHoliday ? 'holiday' : isWeekend ? 'weekend' : '';
+                    
+                    html += `<td class="${cellClass}"><span class="day-number">${day}</span><input type="text" placeholder="Nome" data-day="${day}" class="${(isWeekend || isHoliday) ? 'visible' : ''}" ${!(isWeekend || isHoliday) ? 'disabled' : ''}></td>`;
+                    day++;
+                }
+            }
+            html += '</tr>';
+        }
+
+        calendarBody.innerHTML = html;
+    }
+
+    generateCalendar();
+</script>
+
+</body>
+</html>
